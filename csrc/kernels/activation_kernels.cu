@@ -207,7 +207,7 @@ __global__ void scaled_act_and_mul_kernel(fp8_type* __restrict__ out,        // 
                 res.x = a.x * y.x * s.x;
                 res.y = a.y * y.y * s.y;
                 
-                result = reinterpret_cast<typeof(result)&>(res);
+                result = reinterpret_cast<float2&>(res);
 		/*
                 asm volatile("v_pk_mul_f32 %0, %1, %2\n\t"
                              "v_pk_mul_f32 %0, %0, %3"
