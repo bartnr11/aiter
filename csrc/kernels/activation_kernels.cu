@@ -136,7 +136,9 @@ __global__ void act_and_mul_kernel(DTYPE_I* __restrict__ out,         // [..., d
                 ck_tile::fp32x2_t a = {ax0, ax1};
                 ck_tile::fp32x2_t b = {y0, y1};
                 ck_tile::fp32x2_t c;
-                asm volatile("v_pk_mul_f32 %0, %1, %2" : "=v"(c) : "v"(a), "v"(b));
+                // asm volatile("v_pk_mul_f32 %0, %1, %2" : "=v"(c) : "v"(a), "v"(b));
+		c.x = a.x * b.x;
+                c.y = a.y * b.y;
                 r[j]     = ck_tile::type_convert<DTYPE_I>(c.x);
                 r[j + 1] = ck_tile::type_convert<DTYPE_I>(c.y);
             }
@@ -196,12 +198,24 @@ __global__ void scaled_act_and_mul_kernel(fp8_type* __restrict__ out,        // 
                 float2 scale_vals = {scale, scale};
                 float2 result;
 
+                // poprawka
+		float2 a = reinterpret_cast<float2&>(act_vals);
+                float2 y = reinterpret_cast<float2&>(y_vals);
+                float2 s = reinterpret_cast<float2&>(scale_vals);
+                
+                float2 res;
+                res.x = a.x * y.x * s.x;
+                res.y = a.y * y.y * s.y;
+                
+                result = reinterpret_cast<typeof(result)&>(res);
+		/*
                 asm volatile("v_pk_mul_f32 %0, %1, %2\n\t"
                              "v_pk_mul_f32 %0, %0, %3"
                              : "=v"(result)
                              : "v"(act_vals), "v"(y_vals), "v"(scale_vals));
 
-                out[token_idx * d + idx + j]     = ck_tile::type_convert<fp8_type>(result.x);
+                */
+		out[token_idx * d + idx + j]     = ck_tile::type_convert<fp8_type>(result.x);
                 out[token_idx * d + idx + j + 1] = ck_tile::type_convert<fp8_type>(result.y);
             }
             else
